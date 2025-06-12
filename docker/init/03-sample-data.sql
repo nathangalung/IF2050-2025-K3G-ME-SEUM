@@ -24,20 +24,40 @@ INSERT INTO artefak (nama_artefak, deskripsi_artefak, status, asal_daerah, perio
 ('Sasando NTT', 'Alat musik tradisional dari Pulau Rote dengan senar lontar', 'TERSEDIA', 'Nusa Tenggara Timur', 'Abad 17', 1, 'sasando_ntt.jpg');
 
 -- Sample Pameran
-INSERT INTO pameran (nama_pameran, deskripsi_pameran, tanggal_mulai, tanggal_selesai, lokasi, status, curator_id) VALUES
-('Warisan Nusantara 2024', 'Pameran koleksi artefak tradisional Indonesia dari berbagai daerah', '2024-01-01', '2024-06-30', 'Ruang Pamer Utama', 'AKTIF', 1),
-('Kerajinan Tradisional', 'Pameran khusus kerajinan tangan tradisional Indonesia', '2024-07-01', '2024-12-31', 'Ruang Pamer 2', 'DIJADWALKAN', 2),
-('Budaya Jawa Kuno', 'Pameran artefak dari masa Kerajaan Majapahit dan Mataram', '2024-03-15', '2024-09-15', 'Ruang Pamer 3', 'AKTIF', 1),
-('Seni Musik Nusantara', 'Koleksi alat musik tradisional dari seluruh Indonesia', '2024-05-01', '2024-11-30', 'Ruang Pamer 4', 'DIJADWALKAN', 2),
-('Tekstil Nusantara', 'Pameran kain dan tekstil tradisional Indonesia', '2024-02-01', '2024-08-31', 'Ruang Pamer 5', 'AKTIF', 1);
+INSERT INTO pameran (nama_pameran, deskripsi_pameran, tanggal_mulai, tanggal_selesai, lokasi, status, curator_id, artefak_ids, is_active, tanggal_dibuat) VALUES
+('Warisan Nusantara 2024', 'Pameran koleksi artefak tradisional Indonesia dari berbagai daerah', '2024-01-01 08:00:00', '2024-06-30 18:00:00', 'Ruang Pamer Utama', 'AKTIF', 1, '1,2,4,7,9', true, '2024-01-01 08:00:00'),
+('Kerajinan Tradisional', 'Pameran khusus kerajinan tangan tradisional Indonesia', '2024-07-01 09:00:00', '2024-12-31 17:00:00', 'Ruang Pamer 2', 'DIJADWALKAN', 2, '3,5,10', true, '2024-06-01 10:00:00'),
+('Budaya Jawa Kuno', 'Pameran artefak dari masa Kerajaan Majapahit dan Mataram', '2024-03-15 10:00:00', '2024-09-15 16:00:00', 'Ruang Pamer 3', 'AKTIF', 1, '1,2,8', true, '2024-02-15 14:00:00'),
+('Seni Musik Nusantara', 'Koleksi alat musik tradisional dari seluruh Indonesia', '2024-05-01 09:00:00', '2024-11-30 17:00:00', 'Ruang Pamer 4', 'DIJADWALKAN', 2, '6,10', true, '2024-04-01 09:00:00'),
+('Tekstil Nusantara', 'Pameran kain dan tekstil tradisional Indonesia', '2024-02-01 10:00:00', '2024-08-31 16:00:00', 'Ruang Pamer 5', 'AKTIF', 1, '2,4,5', true, '2024-01-15 11:00:00');
 
 -- Sample Artefak-Pameran Relations
 INSERT INTO artefak_pameran (pameran_id, artefak_id) VALUES
-(1, 1), (1, 2), (1, 4), (1, 7), (1, 9),
-(2, 3), (2, 5), (2, 10),
-(3, 1), (3, 2), (3, 8),
-(4, 6), (4, 10),
-(5, 2), (5, 3), (5, 7);
+-- Warisan Nusantara 2024 (pameran_id: 1)
+(1, 1), -- Keris Pusaka Jawa
+(1, 2), -- Batik Tulis Yogya  
+(1, 4), -- Songket Palembang
+(1, 7), -- Topeng Bali
+(1, 9), -- Perhiasan Emas Sumatera
+
+-- Kerajinan Tradisional (pameran_id: 2)
+(2, 3), -- Ukiran Kayu Jepara
+(2, 5), -- Tenun Ikat Flores
+(2, 10), -- Sasando NTT
+
+-- Budaya Jawa Kuno (pameran_id: 3)
+(3, 1), -- Keris Pusaka Jawa
+(3, 2), -- Batik Tulis Yogya
+(3, 8), -- Wayang Kulit Jawa
+
+-- Seni Musik Nusantara (pameran_id: 4)
+(4, 6), -- Gamelan Jawa
+(4, 10), -- Sasando NTT
+
+-- Tekstil Nusantara (pameran_id: 5)
+(5, 2), -- Batik Tulis Yogya
+(5, 4), -- Songket Palembang
+(5, 5); -- Tenun Ikat Flores
 
 -- Sample Tiket
 INSERT INTO tiket (user_id, jenis_tiket, harga, tanggal_kunjungan, status, kode_tiket, tanggal_pembelian) VALUES

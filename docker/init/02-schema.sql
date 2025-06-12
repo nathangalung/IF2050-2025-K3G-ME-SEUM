@@ -33,11 +33,14 @@ CREATE TABLE IF NOT EXISTS pameran (
     pameran_id BIGSERIAL PRIMARY KEY,
     nama_pameran VARCHAR(255) NOT NULL,
     deskripsi_pameran TEXT,
-    tanggal_mulai DATE NOT NULL,
-    tanggal_selesai DATE NOT NULL,
+    tanggal_mulai TIMESTAMP NOT NULL,              -- Changed from DATE to TIMESTAMP
+    tanggal_selesai TIMESTAMP NOT NULL,            -- Changed from DATE to TIMESTAMP  
     lokasi VARCHAR(100),
     status VARCHAR(20) CHECK (status IN ('AKTIF', 'SELESAI', 'DIJADWALKAN')) DEFAULT 'DIJADWALKAN',
     curator_id BIGINT,
+    artefak_ids TEXT DEFAULT '',                    -- Add this for quick access
+    is_active BOOLEAN DEFAULT true,                 -- Add this
+    tanggal_dibuat TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Add this
     FOREIGN KEY (curator_id) REFERENCES users(user_id)
 );
 
