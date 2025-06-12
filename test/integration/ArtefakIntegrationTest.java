@@ -1,4 +1,4 @@
-package ..test.integration;
+package test.integration;
 
 public class ArtefakIntegrationTest {
     
