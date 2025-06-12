@@ -70,7 +70,7 @@ public class MaintenanceTaskPage extends BorderPane implements PemeliharaanInter
     
     private void initializeTable() {
         taskTable = new TableView<>();
-        taskTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        taskTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
           // ID Column - Sequential numbering instead of database ID
         TableColumn<PemeliharaanDto, String> idColumn = new TableColumn<>("ID");
         idColumn.setCellValueFactory(column -> {

@@ -158,7 +158,7 @@ public class MaintenanceListPage extends BorderPane {    // Controllers
      */
     private void initializeTable() {
         maintenanceTable = new TableView<>();
-        maintenanceTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        maintenanceTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         maintenanceTable.setStyle(
             "-fx-background-color: white;" +
             "-fx-border-color: #e0e0e0;" +
