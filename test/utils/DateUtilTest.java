@@ -1,4 +1,4 @@
-package ..test.utils;
+package test.utils;
 
 public class DateUtilTest {
     

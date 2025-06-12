@@ -1,4 +1,4 @@
-package ..test.controller;
+package test.controller;
 
 public class PameranControllerTest {
     
