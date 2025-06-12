@@ -1,4 +1,4 @@
-package ..test.repository;
+package test.repository;
 
 public class PameranRepositoryTest {
     
