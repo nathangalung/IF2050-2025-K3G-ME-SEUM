@@ -1,0 +1,5 @@
+test\integration\PemeliharaanIntegrationTest.class
+test\controller\PemeliharaanControllerTest.class
+test\model\enums\StatusPemeliharaanTest.class
+test\model\dto\PemeliharaanDtoTest.class
+test\model\entities\PemeliharaanTest.class

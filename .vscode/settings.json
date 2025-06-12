@@ -1,3 +1,23 @@
 {
-    "java.configuration.updateBuildConfiguration": "interactive"
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.compile.nullAnalysis.mode": "automatic",
+    "java.sources.organizeImports.starThreshold": 99,
+    "java.sources.organizeImports.staticStarThreshold": 99,
+    "java.project.sourcePaths": [
+        "src/main/java"
+    ],
+    "java.project.outputPath": "target/classes",
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar"
+    ],
+    "java.configuration.maven.userSettings": null,
+    "maven.executable.path": "mvn",
+    "java.configuration.workspaceCacheLimit": 90,
+    "java.eclipse.downloadSources": true,
+    "java.maven.downloadSources": true,
+    "java.import.maven.enabled": true,
+    "java.configuration.maven.lifecycle.mappings": {
+        "clean": ["validate", "initialize", "generate-sources"],
+        "compile": ["validate", "initialize", "generate-sources", "process-sources", "generate-resources", "process-resources", "compile"]
+    }
 }
