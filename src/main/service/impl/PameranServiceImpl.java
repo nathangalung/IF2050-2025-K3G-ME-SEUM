@@ -128,11 +128,30 @@ public class PameranServiceImpl implements IPameranService {
                 throw new RuntimeException("Pameran not found with ID: " + pameranId);
             }
 
+            // ENSURE artefak_ids is not null before processing
+            if (pameran.getArtefakIds() == null) {
+                pameran.setArtefakIds("");
+                System.out.println("🔧 Fixed null artefak_ids field");
+            }
+
+            // Check if relationship already exists
+            if (pameranRepository.isArtefakInPameran(pameranId, artefakId)) {
+                throw new RuntimeException("Artifact is already in this exhibition");
+            }
+
             // Add the artifact ID to the pameran's artifact list
             pameran.addArtefakId(artefakId);
 
-            // Save the updated pameran
-            pameranRepository.save(pameran);
+            // Save the updated pameran (this updates the artefak_ids field)
+            pameranRepository.update(pameran);
+
+            // Also save to the relationship table if you're using one
+            try {
+                pameranRepository.addArtefakToPameran(pameranId, artefakId);
+            } catch (Exception e) {
+                // If relationship table doesn't exist, that's okay for now
+                System.out.println("⚠️ Relationship table not available, using artefak_ids field only");
+            }
 
             System.out.println("✅ PameranService: Successfully added artifact to pameran");
             System.out.println("📋 Updated artifact list: " + pameran.getArtefakIds());

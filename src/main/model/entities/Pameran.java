@@ -1,6 +1,7 @@
 package main.model.entities;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -100,14 +101,21 @@ public class Pameran {
 
     // Helper methods for working with artifact IDs
     public List<Long> getArtefakIdsList() {
+        // Handle null artefakIds field
         if (artefakIds == null || artefakIds.trim().isEmpty()) {
-            return List.of();
+            return new ArrayList<>();
         }
-        return Arrays.stream(artefakIds.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .map(Long::parseLong)
-                .collect(Collectors.toList());
+
+        try {
+            return Arrays.stream(artefakIds.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .map(Long::parseLong)
+                    .collect(Collectors.toList());
+        } catch (NumberFormatException e) {
+            System.err.println("⚠️ Error parsing artifact IDs: " + artefakIds);
+            return new ArrayList<>();
+        }
     }
 
     public void setArtefakIdsList(List<Long> artefakIdsList) {
@@ -121,6 +129,12 @@ public class Pameran {
     }
 
     public void addArtefakId(Long artefakId) {
+        // Handle null artefakIds field
+        if (this.artefakIds == null) {
+            this.artefakIds = "";
+            System.out.println("🔧 Initialized null artefakIds to empty string");
+        }
+
         List<Long> currentIds = getArtefakIdsList();
         if (!currentIds.contains(artefakId)) {
             currentIds.add(artefakId);

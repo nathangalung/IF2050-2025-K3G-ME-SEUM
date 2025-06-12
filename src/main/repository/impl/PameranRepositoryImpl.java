@@ -179,10 +179,19 @@ public class PameranRepositoryImpl implements IPameranRepository {
                 PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setLong(1, id);
+
             int rowsAffected = stmt.executeUpdate();
 
             if (rowsAffected > 0) {
                 System.out.println("✅ Pameran deleted successfully with ID: " + id);
+
+                // Also clean up any artifact relationships
+                String deleteRelationshipSql = "DELETE FROM artefak_pameran WHERE pameran_id = ?";
+                try (PreparedStatement relStmt = conn.prepareStatement(deleteRelationshipSql)) {
+                    relStmt.setLong(1, id);
+                    relStmt.executeUpdate();
+                    System.out.println("✅ Cleaned up artifact relationships for pameran ID: " + id);
+                }
             } else {
                 System.out.println("⚠️ No pameran found with ID: " + id);
             }
@@ -229,14 +238,15 @@ public class PameranRepositoryImpl implements IPameranRepository {
                 pameran.setIsActive(true);
             }
 
-            // Artifact IDs - handle gracefully if column doesn't exist
+            // Artifact IDs - ENSURE it's never null
             try {
                 String artefakIds = rs.getString("artefak_ids");
+                // ALWAYS set to empty string if null
                 pameran.setArtefakIds(artefakIds != null ? artefakIds : "");
             } catch (SQLException e) {
-                // Column might not exist, set empty
+                // Column might not exist, set empty string
                 pameran.setArtefakIds("");
-                System.out.println("⚠️ artefak_ids column not found, setting empty");
+                System.out.println("⚠️ artefak_ids column not found, setting empty string");
             }
 
         } catch (Exception e) {
@@ -299,7 +309,10 @@ public class PameranRepositoryImpl implements IPameranRepository {
             }
 
             stmt.setBoolean(6, pameran.getIsActive() != null ? pameran.getIsActive() : true);
-            stmt.setString(7, pameran.getArtefakIds() != null ? pameran.getArtefakIds() : "");
+
+            // ENSURE artefak_ids is never null - always set to empty string
+            String artefakIds = pameran.getArtefakIds();
+            stmt.setString(7, artefakIds != null ? artefakIds : "");
 
             int rowsAffected = stmt.executeUpdate();
 
@@ -307,6 +320,12 @@ public class PameranRepositoryImpl implements IPameranRepository {
                 ResultSet generatedKeys = stmt.getGeneratedKeys();
                 if (generatedKeys.next()) {
                     pameran.setPameranId(generatedKeys.getLong(1));
+
+                    // IMPORTANT: Set artefak_ids to empty string if it was null
+                    if (pameran.getArtefakIds() == null) {
+                        pameran.setArtefakIds("");
+                        System.out.println("🔧 Initialized artefak_ids to empty string for new pameran");
+                    }
                 }
                 System.out.println("✅ Pameran saved successfully with ID: " + pameran.getPameranId());
             }
@@ -399,5 +418,76 @@ public class PameranRepositoryImpl implements IPameranRepository {
         }
 
         return 0;
+    }
+
+    @Override
+    public boolean isArtefakInPameran(Long pameranId, Long artefakId) {
+        String sql = "SELECT COUNT(*) FROM artefak_pameran WHERE pameran_id = ? AND artefak_id = ?";
+
+        try (Connection conn = dbUtil.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setLong(1, pameranId);
+            stmt.setLong(2, artefakId);
+
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+
+        } catch (SQLException e) {
+            System.err.println("❌ Database error checking artifact-pameran relationship: " + e.getMessage());
+            throw new RuntimeException("Error checking artifact-pameran relationship", e);
+        }
+
+        return false;
+    }
+
+    @Override
+    public void addArtefakToPameran(Long pameranId, Long artefakId) {
+        String sql = "INSERT INTO artefak_pameran (pameran_id, artefak_id) VALUES (?, ?)";
+
+        try (Connection conn = dbUtil.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setLong(1, pameranId);
+            stmt.setLong(2, artefakId);
+
+            int rowsAffected = stmt.executeUpdate();
+
+            if (rowsAffected > 0) {
+                System.out.println(
+                        "✅ Added artifact-pameran relationship: pameran=" + pameranId + ", artifact=" + artefakId);
+            } else {
+                throw new RuntimeException("Failed to create artifact-pameran relationship");
+            }
+
+        } catch (SQLException e) {
+            System.err.println("❌ Database error adding artifact-pameran relationship: " + e.getMessage());
+            throw new RuntimeException("Error adding artifact-pameran relationship", e);
+        }
+    }
+
+    @Override
+    public void removeArtefakFromPameran(Long pameranId, Long artefakId) {
+        String sql = "DELETE FROM artefak_pameran WHERE pameran_id = ? AND artefak_id = ?";
+
+        try (Connection conn = dbUtil.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setLong(1, pameranId);
+            stmt.setLong(2, artefakId);
+
+            int rowsAffected = stmt.executeUpdate();
+
+            if (rowsAffected > 0) {
+                System.out.println(
+                        "✅ Removed artifact-pameran relationship: pameran=" + pameranId + ", artifact=" + artefakId);
+            }
+
+        } catch (SQLException e) {
+            System.err.println("❌ Database error removing artifact-pameran relationship: " + e.getMessage());
+            throw new RuntimeException("Error removing artifact-pameran relationship", e);
+        }
     }
 }
