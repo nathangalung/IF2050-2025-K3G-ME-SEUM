@@ -84,13 +84,17 @@ INSERT INTO tiket (user_id, jenis_tiket, harga, tanggal_kunjungan, status, kode_
 (3, 'PREMIUM', 50000.00, '2024-04-05', 'AKTIF', 'TKT20240405001', '2024-04-04 16:45:00')
 ON CONFLICT (kode_tiket) DO NOTHING;
 
--- Sample Feedback
+-- Sample Feedback (SINGLE SET - REMOVED DUPLICATES)
 INSERT INTO feedback (user_id, rating, komentar, tanggal_feedback) VALUES
 (3, 5, 'Museum yang sangat bagus! Koleksi artefaknya lengkap dan menarik. Saya sangat terkesan dengan pameran Warisan Nusantara.', '2024-01-15 10:30:00'),
 (4, 4, 'Pemandu museumnya sangat informatif, tapi fasilitas toilet perlu diperbaiki. Overall bagus sekali!', '2024-01-20 14:45:00'),
 (5, 5, 'Luar biasa! Anak-anak saya sangat suka dengan koleksi wayang kulitnya. Terima kasih Museum Nusantara!', '2024-02-05 09:15:00'),
 (3, 4, 'Pameran Budaya Jawa Kuno sangat edukatif. Sayang parkiran agak sempit untuk weekend.', '2024-02-10 16:20:00'),
-(4, 5, 'Koleksi batiknya menakjubkan! Saya belajar banyak tentang sejarah batik Indonesia.', '2024-02-25 11:00:00')
+(4, 5, 'Koleksi batiknya menakjubkan! Saya belajar banyak tentang sejarah batik Indonesia.', '2024-02-25 11:00:00'),
+(3, 4, 'Great collection, would love to see more interactive displays.', '2024-01-16 14:20:00'),
+(5, 5, 'The event was fantastic! Learned so much about Indonesian culture.', '2024-01-17 16:45:00'),
+(4, 3, 'Good but could be improved with better lighting in some areas.', '2024-01-18 11:15:00'),
+(3, 5, 'Outstanding! The staff was very knowledgeable and helpful.', '2024-01-19 13:30:00')
 ON CONFLICT DO NOTHING;
 
 -- Sample Pemeliharaan

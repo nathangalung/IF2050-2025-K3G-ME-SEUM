@@ -27,7 +27,6 @@ import main.repository.impl.PemeliharaanRepositoryImpl;
 import main.service.impl.PemeliharaanServiceImpl;
 import main.ui.views.cleaner.MaintenanceTaskPage;
 import main.ui.views.curator.MaintenanceListPage;
-import main.ui.components.common.Footer;
 import main.ui.components.common.NavigationBar;
 import main.ui.components.common.SideBar;
 import main.ui.views.auth.LoginPage;
@@ -40,8 +39,13 @@ import main.ui.views.customer.CollectionPage;
 import main.ui.views.customer.EventPage;
 import main.ui.views.customer.HomePage;
 import main.ui.views.customer.YourOrdersPage;
-import main.utils.SessionManager;
+import main.controller.FeedbackController;
+import main.repository.impl.FeedbackRepositoryImpl;
+import main.service.impl.FeedbackServiceImpl;
+import main.ui.components.common.FeedbackDialog;
+import main.model.dto.FeedbackDto;
 
+import java.util.Optional;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -906,6 +910,26 @@ public class Main extends Application implements NavigationBar.NavigationListene
 
     // Handle buy ticket action - this will add the event to Your Orders
     private void buyTicketForEvent(PameranDto event) {
+        // CHECK AUTHENTICATION FIRST
+        if (currentUser == null || currentUser.getRole() != UserRole.CUSTOMER) {
+            // Show login required dialog
+            Alert loginAlert = new Alert(Alert.AlertType.INFORMATION);
+            loginAlert.setTitle("Login Required");
+            loginAlert.setHeaderText("Please login to purchase tickets");
+            loginAlert.setContentText("You need to login as a customer to purchase event tickets. Would you like to login now?");
+            
+            ButtonType loginButtonType = new ButtonType("Login", ButtonBar.ButtonData.OK_DONE);
+            ButtonType cancelButtonType = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+            loginAlert.getButtonTypes().setAll(loginButtonType, cancelButtonType);
+
+            loginAlert.showAndWait().ifPresent(response -> {
+                if (response == loginButtonType) {
+                    showLoginPage();
+                }
+            });
+            return;
+        }
+
         try {
             // Show confirmation dialog
             Alert confirmDialog = new Alert(Alert.AlertType.CONFIRMATION);
@@ -918,8 +942,7 @@ public class Main extends Application implements NavigationBar.NavigationListene
                     // Generate order ID
                     String orderId = "ORDER_" + System.currentTimeMillis();
 
-                    // Store the order information (you might want to implement a proper order
-                    // management system)
+                    // Store the order information
                     addEventToYourOrders(event, orderId);
 
                     // Show success message
@@ -932,7 +955,10 @@ public class Main extends Application implements NavigationBar.NavigationListene
                                     "Status: Confirmed\n\n" +
                                     "You can view your ticket in 'Your Orders' page.");
 
-                    successAlert.showAndWait();
+                    successAlert.showAndWait().ifPresent(successResponse -> {
+                        // After success dialog, show feedback dialog
+                        showFeedbackDialog(event);
+                    });
 
                     // Navigate to Your Orders page
                     showYourOrdersPage();
@@ -1091,6 +1117,40 @@ public class Main extends Application implements NavigationBar.NavigationListene
         return page;
     }
 
+    // NEW METHOD: Show feedback dialog after ticket purchase
+    private void showFeedbackDialog(PameranDto event) {
+        if (currentUser == null) return;
+
+        try {
+            Optional<FeedbackDto> feedback = FeedbackDialog.showFeedbackDialog(
+                currentUser.getUserId(), 
+                event.getNamaPameran()
+            );
+
+            if (feedback.isPresent()) {
+                // Create feedback controller with correct interface type
+                main.repository.interfaces.IFeedbackRepository feedbackRepository = new FeedbackRepositoryImpl();
+                FeedbackServiceImpl feedbackService = new FeedbackServiceImpl(feedbackRepository);
+                FeedbackController feedbackController = new FeedbackController(feedbackService);
+
+                // Save feedback to database
+                feedbackController.createFeedback(feedback.get());
+
+                // Show thank you message
+                Alert thankYouAlert = new Alert(Alert.AlertType.INFORMATION);
+                thankYouAlert.setTitle("Thank You!");
+                thankYouAlert.setHeaderText("Feedback Submitted Successfully");
+                thankYouAlert.setContentText("Thank you for sharing your experience! Your feedback helps us improve our services.");
+                thankYouAlert.showAndWait();
+
+                System.out.println("✅ Feedback submitted successfully for event: " + event.getNamaPameran());
+            }
+        } catch (Exception e) {
+            System.err.println("❌ Error handling feedback: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     private void showArtefakListPage() {
         try {
             hideNavigationBar();
@@ -1175,23 +1235,18 @@ public class Main extends Application implements NavigationBar.NavigationListene
     private void showFeedbackListPage() {
         try {
             hideNavigationBar();
+            sideBar.setActiveMenuByDestination("FEEDBACK");
 
-            VBox feedbackContent = new VBox(20);
-            feedbackContent.setPadding(new Insets(30));
-            feedbackContent.setStyle("-fx-background-color: white;");
+            // Create feedback controller with correct interface type
+            main.repository.interfaces.IFeedbackRepository feedbackRepository = new FeedbackRepositoryImpl();
+            FeedbackServiceImpl feedbackService = new FeedbackServiceImpl(feedbackRepository);
+            FeedbackController feedbackController = new FeedbackController(feedbackService);
 
-            Label titleLabel = new Label("Feedback Management");
-            titleLabel.setFont(Font.font("System", FontWeight.BOLD, 24));
-            titleLabel.setTextFill(Color.web("#2c3e50"));
-
-            Label infoLabel = new Label("Feedback management functionality will be implemented here.");
-            infoLabel.setFont(Font.font("System", 16));
-            infoLabel.setTextFill(Color.web("#34495e"));
-
-            feedbackContent.getChildren().addAll(titleLabel, infoLabel);
+            // Create feedback list page
+            FeedbackListPage feedbackListPage = new FeedbackListPage(feedbackController);
 
             mainLayout.setLeft(sideBar);
-            mainLayout.setCenter(feedbackContent);
+            mainLayout.setCenter(feedbackListPage);
 
             System.out.println("✅ Feedback List Page loaded!");
 

@@ -66,14 +66,14 @@ CREATE TABLE IF NOT EXISTS tiket (
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
--- Feedback table
+-- Feedback table (SINGLE DEFINITION - REMOVED DUPLICATE)
 CREATE TABLE IF NOT EXISTS feedback (
     feedback_id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT,
-    rating INTEGER CHECK (rating >= 1 AND rating <= 5),
-    komentar TEXT,
+    user_id BIGINT NOT NULL,
+    rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    komentar TEXT NOT NULL,
     tanggal_feedback TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
 -- Pemeliharaan table
