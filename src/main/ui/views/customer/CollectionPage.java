@@ -1,6 +1,7 @@
 package main.ui.views.customer;
 
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -8,221 +9,345 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import main.controller.ManajemenArtefakController;
 import main.model.dto.ArtefakDto;
+import main.ui.components.common.NavigationBar;
+import main.ui.components.common.Footer;
+import main.ui.components.collection.FilterBox;
 
 import java.util.List;
 
 /**
- * Simplified Collection page for frontend testing - focuses on artifact management only
+ * Collection page for displaying artifacts to museum visitors
  */
-public class CollectionPage extends BorderPane {
+public class CollectionPage extends BorderPane implements FilterBox.FilterListener, NavigationBar.NavigationListener {
     private final ManajemenArtefakController controller;
     
-    // Core UI Components (simplified)
+    // UI Components
+    private NavigationBar navigationBar;
+    private FilterBox filterBox;
     private TilePane artefakPane;
-    private ScrollPane scrollPane;
-    private TextField searchField;
+    private ScrollPane scrollPane;           // For artifacts only
+    private ScrollPane mainScrollPane;       // For entire page including footer - ADD THIS FIELD
+    private Footer footer;
     
+    // Add external navigation listener
+    private NavigationBar.NavigationListener externalNavigationListener;
+    
+    /**
+     * Constructor for CollectionPage
+     * @param controller The artifact management controller
+     */
     public CollectionPage(ManajemenArtefakController controller) {
         this.controller = controller;
-        initializeComponents();
+        initComponents();
         setupLayout();
-        loadInitialData();
+        loadArtefaks();
     }
     
-    private void initializeComponents() {
-        // Initialize artifact display area
-        artefakPane = new TilePane();
-        artefakPane.setPrefColumns(3);
-        artefakPane.setHgap(20);
-        artefakPane.setVgap(20);
-        artefakPane.setPadding(new Insets(20));
+    /**
+     * Constructor for CollectionPage with external navigation listener
+     * @param controller The artifact management controller
+     * @param externalNavigationListener The external navigation listener
+     */
+    public CollectionPage(ManajemenArtefakController controller, NavigationBar.NavigationListener externalNavigationListener) {
+        this.controller = controller;
+        this.externalNavigationListener = externalNavigationListener;
+        initComponents();
+        setupLayout();
+        loadArtefaks();
+    }
+    
+    /**
+     * Initialize components
+     */
+    private void initComponents() {
+        // Create navigation bar with this class as listener
+        navigationBar = new NavigationBar(this);
+        navigationBar.setActiveDestination("COLLECTION");
         
-        // Create scroll pane for artifacts
+        // Create filter box with this class as listener
+        filterBox = new FilterBox(this);
+        
+        // Create artifact display area
+        artefakPane = new TilePane();
+        artefakPane.setHgap(15);
+        artefakPane.setVgap(15);
+        artefakPane.setPadding(new Insets(20));
+        artefakPane.setPrefTileWidth(280);
+        artefakPane.setPrefTileHeight(350);
+        
+        // Put artifact pane in scroll pane
         scrollPane = new ScrollPane(artefakPane);
         scrollPane.setFitToWidth(true);
-        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setStyle("-fx-background-color: #f5f3e8;");
         
-        // Simple search field
-        searchField = new TextField();
-        searchField.setPromptText("Search artifacts...");
-        searchField.setPrefWidth(300);
+        // Create footer
+        footer = new Footer();
     }
     
+    /**
+     * Set up layout
+     */
     private void setupLayout() {
-        // Create simple header
-        VBox header = createSimpleHeader();
+        // Set background color for the entire page
+        setStyle("-fx-background-color: #f5f3e8;");
         
-        // Main content with artifacts
-        VBox mainContent = new VBox(10);
-        mainContent.setPadding(new Insets(20));
-        mainContent.getChildren().add(scrollPane);
+        // Create header with title
+        VBox headerBox = new VBox(20);
+        headerBox.setAlignment(Pos.CENTER);
         
-        // Set layout
-        setTop(header);
-        setCenter(mainContent);
+        // Add title
+        Label titleLabel = new Label("Artwork Collection");
+        titleLabel.setFont(Font.font("System", FontWeight.BOLD, 36));
+        titleLabel.setTextFill(Color.BLACK);
+        titleLabel.setPadding(new Insets(30, 0, 30, 0));
+        headerBox.getChildren().add(titleLabel);
         
-        // Style the page
-        setStyle("-fx-background-color: #f5f5f5;");
+        // Style header box
+        headerBox.setStyle("-fx-background-color: #f5f3e8;");
+        
+        // Create main content container that includes content and footer
+        VBox mainContent = new VBox();
+        mainContent.setStyle("-fx-background-color: #f5f3e8;");
+        
+        // Create content container for filter and artifacts
+        VBox contentContainer = new VBox();
+        contentContainer.getChildren().addAll(filterBox, artefakPane);
+        contentContainer.setPadding(new Insets(20));
+        
+        // Add content and footer to main content
+        mainContent.getChildren().addAll(
+            contentContainer,
+            footer 
+        );
+        
+        // Create scroll pane for the entire main content (including footer)
+        mainScrollPane = new ScrollPane();  // Use mainScrollPane as class field
+        mainScrollPane.setContent(mainContent);
+        mainScrollPane.setFitToWidth(true);
+        mainScrollPane.setStyle("-fx-background-color: #f5f3e8;");
+        mainScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        mainScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        
+        // Set the layout components
+        setTop(headerBox);
+        setCenter(mainScrollPane);  // Use mainScrollPane
+        // Footer is now part of the scrollable content, not setBottom()
     }
     
-    private VBox createSimpleHeader() {
-        VBox header = new VBox(15);
-        header.setPadding(new Insets(20));
-        header.setStyle("-fx-background-color: white; -fx-border-color: #ddd; -fx-border-width: 0 0 1 0;");
-        
-        // Page title
-        Label titleLabel = new Label("Koleksi Artefak");
-        titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 28));
-        titleLabel.setTextFill(Color.web("#2c3e50"));
-        
-        Label subtitleLabel = new Label("Jelajahi koleksi artefak bersejarah museum kami");
-        subtitleLabel.setFont(Font.font("Arial", 16));
-        subtitleLabel.setTextFill(Color.web("#7f8c8d"));
-        
-        // Search area
-        HBox searchArea = new HBox(10);
-        searchArea.getChildren().addAll(new Label("Search:"), searchField);
-        
-        header.getChildren().addAll(titleLabel, subtitleLabel, searchArea);
-        
-        return header;
-    }
-    
-    private void loadInitialData() {
-        // Load initial artifacts (mock data for frontend testing)
-        if (controller != null) {
-            try {
-                List<ArtefakDto> artifacts = controller.getAllArtefaks();
-                displayArtefaks(artifacts);
-            } catch (Exception e) {
-                // For frontend-only testing, create mock data
-                createMockArtefakDisplay();
-            }
-        } else {
-            createMockArtefakDisplay();
+    /**
+     * Load all artifacts
+     */
+    private void loadArtefaks() {
+        try {
+            List<ArtefakDto> artefaks = controller.getAllArtefaks();
+            displayArtefaks(artefaks);
+        } catch (Exception e) {
+            showAlert("Error", "Error loading artifacts: " + e.getMessage(), Alert.AlertType.ERROR);
         }
     }
     
-    private void createMockArtefakDisplay() {
-        // Create mock artifact cards for frontend testing
-        for (int i = 1; i <= 6; i++) {
-            VBox artefakCard = createArtefakCard(
-                "Artefak " + i,
-                "Deskripsi artefak " + i,
-                "Daerah " + i,
-                "mock_image_" + i + ".jpg"
-            );
-            artefakPane.getChildren().add(artefakCard);
-        }
-    }
-    
-    private VBox createArtefakCard(String name, String description, String region, String image) {
-        VBox card = new VBox(10);
-        card.setPrefWidth(200);
-        card.setPrefHeight(250);
-        card.setPadding(new Insets(15));
-        card.setStyle(
-            "-fx-background-color: white; " +
-            "-fx-border-color: #ddd; " +
-            "-fx-border-radius: 8; " +
-            "-fx-background-radius: 8; " +
-            "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 0, 2);"
-        );
-        
-        // Image placeholder
-        Label imageLabel = new Label("📷");
-        imageLabel.setFont(Font.font(40));
-        imageLabel.setStyle("-fx-background-color: #ecf0f1; -fx-border-radius: 4; -fx-alignment: center;");
-        imageLabel.setPrefHeight(80);
-        
-        // Artifact name
-        Label nameLabel = new Label(name);
-        nameLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
-        nameLabel.setWrapText(true);
-        
-        // Description
-        Label descLabel = new Label(description);
-        descLabel.setFont(Font.font("Arial", 12));
-        descLabel.setTextFill(Color.web("#7f8c8d"));
-        descLabel.setWrapText(true);
-        
-        // Region
-        Label regionLabel = new Label("📍 " + region);
-        regionLabel.setFont(Font.font("Arial", 10));
-        regionLabel.setTextFill(Color.web("#95a5a6"));
-        
-        // View button
-        Button viewButton = new Button("Lihat Detail");
-        viewButton.setStyle(
-            "-fx-background-color: #3498db; " +
-            "-fx-text-fill: white; " +
-            "-fx-font-weight: bold; " +
-            "-fx-border-radius: 4; " +
-            "-fx-background-radius: 4;"
-        );
-        viewButton.setPrefWidth(Double.MAX_VALUE);
-        
-        card.getChildren().addAll(imageLabel, nameLabel, descLabel, regionLabel, viewButton);
-        
-        // Add hover effect
-        card.setOnMouseEntered(e -> card.setStyle(card.getStyle() + "-fx-scale-y: 1.02; -fx-scale-x: 1.02;"));
-        card.setOnMouseExited(e -> card.setStyle(card.getStyle().replace("-fx-scale-y: 1.02; -fx-scale-x: 1.02;", "")));
-        
-        return card;
-    }
-    
-    public void displayArtefaks(List<ArtefakDto> artefaks) {
+    /**
+     * Display artifacts in grid
+     * @param artefaks The list of artifacts to display
+     */
+    private void displayArtefaks(List<ArtefakDto> artefaks) {
         artefakPane.getChildren().clear();
         
-        if (artefaks == null || artefaks.isEmpty()) {
-            Label noDataLabel = new Label("Tidak ada artefak yang ditemukan");
-            noDataLabel.setFont(Font.font("Arial", 16));
-            noDataLabel.setTextFill(Color.web("#7f8c8d"));
-            artefakPane.getChildren().add(noDataLabel);
+        if (artefaks.isEmpty()) {
+            Label emptyLabel = new Label("No artifacts found");
+            emptyLabel.setFont(Font.font("System", FontWeight.BOLD, 18));
+            emptyLabel.setTextFill(Color.GRAY);
+            artefakPane.getChildren().add(emptyLabel);
             return;
         }
         
         for (ArtefakDto artefak : artefaks) {
-            VBox artefakCard = createArtefakCard(
-                artefak.getNamaArtefak(),
-                artefak.getDeskripsiArtefak(),
-                artefak.getAsalDaerah(),
-                artefak.getGambar()
-            );
+            VBox artefakCard = createArtefakCard(artefak);
             artefakPane.getChildren().add(artefakCard);
         }
     }
     
-    public void showMessage(String message, boolean isError) {
-        Alert alert = new Alert(isError ? Alert.AlertType.ERROR : Alert.AlertType.INFORMATION);
-        alert.setTitle(isError ? "Error" : "Information");
-        alert.setHeaderText(null);
+    /**
+     * Create artifact card component
+     * @param artefak The artifact to create card for
+     * @return The artifact card
+     */
+    private VBox createArtefakCard(ArtefakDto artefak) {
+        VBox card = new VBox(10);
+        card.setAlignment(Pos.TOP_CENTER);
+        card.setPadding(new Insets(15));
+        card.setPrefWidth(250);
+        card.setPrefHeight(320);
+        card.setStyle(
+            "-fx-background-color: white;" +
+            "-fx-border-color: #dee2e6;" +
+            "-fx-border-width: 1;" +
+            "-fx-border-radius: 8;" +
+            "-fx-background-radius: 8;" +
+            "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 4, 0, 0, 2);"
+        );
+        
+        // Image placeholder
+        Label imageLabel = new Label("📷 No Image");
+        imageLabel.setPrefSize(220, 150);
+        imageLabel.setAlignment(Pos.CENTER);
+        imageLabel.setStyle(
+            "-fx-background-color: #f8f9fa;" +
+            "-fx-border-color: #dee2e6;" +
+            "-fx-border-width: 1;" +
+            "-fx-text-fill: #6c757d;" +
+            "-fx-font-size: 14px;"
+        );
+        
+        // Info section
+        VBox infoBox = new VBox(5);
+        infoBox.setAlignment(Pos.TOP_LEFT);
+        
+        Label nameLabel = new Label(artefak.getNamaArtefak());
+        nameLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        nameLabel.setTextFill(Color.web("#2E7D32"));
+        nameLabel.setWrapText(true);
+        
+        Label regionLabel = new Label("Asal: " + artefak.getAsalDaerah());
+        regionLabel.setFont(Font.font("Arial", 12));
+        regionLabel.setTextFill(Color.web("#666666"));
+        
+        Label periodLabel = new Label("Periode: " + artefak.getPeriode());
+        periodLabel.setFont(Font.font("Arial", 12));
+        periodLabel.setTextFill(Color.web("#666666"));
+        
+        Label statusLabel = new Label("Status: " + artefak.getStatus());
+        statusLabel.setFont(Font.font("Arial", 12));
+        statusLabel.setTextFill(Color.web("#28a745"));
+        
+        infoBox.getChildren().addAll(nameLabel, regionLabel, periodLabel, statusLabel);
+        
+        // Detail button
+        Button detailButton = new Button("Lihat Detail");
+        detailButton.setStyle(
+            "-fx-background-color: #17a2b8;" +
+            "-fx-text-fill: white;" +
+            "-fx-padding: 6 12;" +
+            "-fx-border-radius: 4;" +
+            "-fx-background-radius: 4;" +
+            "-fx-cursor: hand;"
+        );
+        detailButton.setOnAction(e -> showArtefakDetail(artefak));
+        
+        // Add hover effect to card
+        card.setOnMouseEntered(e -> 
+            card.setStyle(
+                "-fx-background-color: #f8f9fa;" +
+                "-fx-border-color: #2E7D32;" +
+                "-fx-border-width: 2;" +
+                "-fx-border-radius: 8;" +
+                "-fx-background-radius: 8;" +
+                "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 8, 0, 0, 4);"
+            )
+        );
+        
+        card.setOnMouseExited(e -> 
+            card.setStyle(
+                "-fx-background-color: white;" +
+                "-fx-border-color: #dee2e6;" +
+                "-fx-border-width: 1;" +
+                "-fx-border-radius: 8;" +
+                "-fx-background-radius: 8;" +
+                "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 4, 0, 0, 2);"
+            )
+        );
+        
+        card.getChildren().addAll(imageLabel, infoBox, detailButton);
+        return card;
+    }
+    
+    /**
+     * Show artifact detail dialog
+     * @param artefak The artifact to show details for
+     */
+    private void showArtefakDetail(ArtefakDto artefak) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Detail Artefak");
+        alert.setHeaderText(artefak.getNamaArtefak());
+        
+        String content = String.format(
+            "Deskripsi: %s%n%n" +
+            "Asal Daerah: %s%n" +
+            "Periode: %s%n" +
+            "Status: %s",
+            artefak.getDeskripsiArtefak(),
+            artefak.getAsalDaerah(),
+            artefak.getPeriode(),
+            artefak.getStatus()
+        );
+        
+        alert.setContentText(content);
+        alert.showAndWait();
+    }
+    
+    /**
+     * Helper method to show alerts
+     * @param title The alert title
+     * @param message The alert message
+     * @param type The alert type
+     */
+    private void showAlert(String title, String message, Alert.AlertType type) {
+        Alert alert = new Alert(type);
+        alert.setTitle(title);
         alert.setContentText(message);
         alert.showAndWait();
     }
     
-    public void performSearch(String searchTerm) {
-        if (controller != null) {
-            try {
-                List<ArtefakDto> results = controller.searchArtefaks(searchTerm);
-                displayArtefaks(results);
-            } catch (Exception e) {
-                showMessage("Error searching: " + e.getMessage(), true);
-            }
+    /**
+     * Implementation of FilterBox.FilterListener
+     * @param searchTerm The search term
+     */
+    @Override
+    public void onSearch(String searchTerm) {
+        try {
+            List<ArtefakDto> results = controller.searchArtefaks(searchTerm);
+            displayArtefaks(results);
+        } catch (Exception e) {
+            showAlert("Error", "Error searching artifacts: " + e.getMessage(), Alert.AlertType.ERROR);
         }
     }
     
-    // Getters for testing
-    public TilePane getArtefakPane() { 
-        return artefakPane; 
+    /**
+     * Implementation of FilterBox.FilterListener
+     * @param filter The selected filter
+     */
+    @Override
+    public void onFilter(String filter) {
+        try {
+            List<ArtefakDto> results;
+            if ("Semua Daerah".equals(filter)) {
+                results = controller.getAllArtefaks();
+            } else {
+                results = controller.getArtefaksByAsalDaerah(filter);
+            }
+            displayArtefaks(results);
+        } catch (Exception e) {
+            showAlert("Error", "Error filtering artifacts: " + e.getMessage(), Alert.AlertType.ERROR);
+        }
     }
     
-    public TextField getSearchField() { 
-        return searchField; 
+    /**
+     * Implementation of NavigationBar.NavigationListener
+     * @param destination The navigation destination
+     */
+    @Override
+    public void onNavigate(String destination) {
+        // Forward navigation to external listener (Main.java)
+        if (externalNavigationListener != null) {
+            externalNavigationListener.onNavigate(destination);
+        }
     }
-    
-    public ScrollPane getScrollPane() { 
-        return scrollPane; 
+
+    /**
+     * Scroll to footer when contact is clicked
+     */
+    public void scrollToFooter() {
+        // FIXED: Use mainScrollPane instead of scrollPane
+        mainScrollPane.setVvalue(1.0); // Scroll to bottom
     }
 }

@@ -14,35 +14,29 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+
 import main.model.dto.UserDto;
-import main.utils.SessionManager;
+import main.model.enums.UserRole;
 
 /**
  * SideBar component for ME-SEUM application.
  * Creates a vertical black sidebar with navigation menu items and logout functionality.
  */
-public class SideBar extends VBox implements SessionManager.SessionListener {
+public class SideBar extends VBox {
     
     private SidebarMenuItem activeMenuItem;
     private NavigationListener navigationListener;
-    private SessionManager sessionManager;
     private Button logoutButton;
     private Label userInfoLabel;
+    private UserDto currentUser;
     
     /**
      * Constructor for SideBar
      */
     public SideBar() {
-        this.sessionManager = SessionManager.getInstance();
         setupSideBar();
         createMenuItems();
         createLogoutSection();
-        
-        // Register for session changes
-        sessionManager.addSessionListener(this);
-        
-        // Update initial state
-        updateSessionState();
     }
     
     /**
@@ -51,16 +45,9 @@ public class SideBar extends VBox implements SessionManager.SessionListener {
      */
     public SideBar(NavigationListener listener) {
         this.navigationListener = listener;
-        this.sessionManager = SessionManager.getInstance();
         setupSideBar();
         createMenuItems();
         createLogoutSection();
-        
-        // Register for session changes
-        sessionManager.addSessionListener(this);
-        
-        // Update initial state
-        updateSessionState();
     }
     
     /**
@@ -96,7 +83,7 @@ public class SideBar extends VBox implements SessionManager.SessionListener {
         // ARTIFACT as main page, EVENT ARTIFACT for events, MAINTENANCE, FEEDBACK
         SidebarMenuItem artifactItem = new SidebarMenuItem("📊", "ARTIFACT LIST", "ARTIFACT");
         SidebarMenuItem eventArtifactItem = new SidebarMenuItem("🏛️", "EVENT ARTIFACT", "EVENT_ARTIFACT");
-        SidebarMenuItem maintenanceItem = new SidebarMenuItem("🔧", "MAINTANANCE", "MAINTENANCE");
+        SidebarMenuItem maintenanceItem = new SidebarMenuItem("🔧", "MAINTENANCE", "MAINTENANCE");
         SidebarMenuItem feedbackItem = new SidebarMenuItem("📝", "FEEDBACK", "FEEDBACK");
         
         // Add menu items to sidebar
@@ -190,18 +177,11 @@ public class SideBar extends VBox implements SessionManager.SessionListener {
         getChildren().addAll(spacer, userSection);
     }
 
-    
     /**
      * Handle logout action
      */
-    /**
- * Handle logout action
- */
-    /**
- * Handle logout action
- */
     private void handleLogout() {
-        // Show confirmation dialog (optional)
+        // Show confirmation dialog
         Alert confirmDialog = new Alert(Alert.AlertType.CONFIRMATION);
         confirmDialog.setTitle("Confirm Logout");
         confirmDialog.setHeaderText(null);
@@ -209,8 +189,9 @@ public class SideBar extends VBox implements SessionManager.SessionListener {
         
         Optional<ButtonType> result = confirmDialog.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
-            // Logout from session manager
-            sessionManager.logout();
+            // Clear current user
+            currentUser = null;
+            updateSessionState();
             
             // Notify navigation listener if available
             if (navigationListener != null) {
@@ -226,11 +207,9 @@ public class SideBar extends VBox implements SessionManager.SessionListener {
      * Update UI based on session state
      */
     private void updateSessionState() {
-        if (sessionManager.isLoggedIn()) {
-            UserDto user = sessionManager.getCurrentUser();
-            
+        if (currentUser != null) {
             // Show user info
-            userInfoLabel.setText("Logged in as:\n" + user.getNamaLengkap() + "\n(" + user.getRole().getDisplayName() + ")");
+            userInfoLabel.setText("Logged in as:\n" + currentUser.getNamaLengkap() + "\n(" + currentUser.getRole().getDisplayName() + ")");
             userInfoLabel.setVisible(true);
             
             // Show logout button
@@ -244,14 +223,18 @@ public class SideBar extends VBox implements SessionManager.SessionListener {
     }
     
     /**
-     * Session change listener implementation
+     * Set current user
      */
-    @Override
-    public void onSessionChanged(UserDto user) {
-        // Update UI when session changes
+    public void setCurrentUser(UserDto user) {
+        this.currentUser = user;
         updateSessionState();
-        System.out.println("🔄 SideBar updated for session change: " + 
-                          (user != null ? user.getUsername() : "logged out"));
+        
+        // Switch menu based on user role
+        if (user != null && user.getRole() == UserRole.CLEANER) {
+            createCleanerMenuItems();
+        } else {
+            // Default curator menu is already created
+        }
     }
     
     /**
@@ -292,12 +275,68 @@ public class SideBar extends VBox implements SessionManager.SessionListener {
     public void setNavigationListener(NavigationListener listener) {
         this.navigationListener = listener;
     }
-    
-    /**
-     * Cleanup when component is destroyed
-     */
-    public void cleanup() {
-        sessionManager.removeSessionListener(this);
+
+    // Add this method after createMenuItems()
+    public void createCleanerMenuItems() {
+        // Clear existing items
+        getChildren().clear();
+        
+        // Re-add logo
+        Label logo = new Label("ME-SEUM");
+        logo.setFont(Font.font("System", FontWeight.BOLD, 18));
+        logo.setTextFill(Color.WHITE);
+        logo.setPadding(new Insets(0, 0, 20, 0));
+        
+        // Create maintenance menu item only for cleaner
+        SidebarMenuItem maintenanceItem = new SidebarMenuItem("🔧", "MAINTENANCE", "MAINTENANCE");
+        
+        // Add spacer to push logout to bottom
+        Region spacer = new Region();
+        VBox.setVgrow(spacer, Priority.ALWAYS);
+        
+        // Create user info and logout section
+        VBox userSection = new VBox(8);
+        userSection.setAlignment(Pos.CENTER);
+        userSection.setPadding(new Insets(15));
+        
+        // User info label
+        userInfoLabel = new Label();
+        userInfoLabel.setFont(Font.font("System", 11));
+        userInfoLabel.setTextFill(Color.LIGHTGRAY);
+        userInfoLabel.setWrapText(true);
+        
+        // Logout button
+        logoutButton = new Button("🚪 Logout");
+        logoutButton.setPrefWidth(150);
+        logoutButton.setStyle(
+            "-fx-background-color: #2c2c2c;" +
+            "-fx-text-fill: #ff6b6b;" +
+            "-fx-font-size: 11px;" +
+            "-fx-font-weight: normal;" +
+            "-fx-padding: 8 12;" +
+            "-fx-background-radius: 5;" +
+            "-fx-border-radius: 5;" +
+            "-fx-border-color: #404040;" +
+            "-fx-border-width: 1;" +
+            "-fx-cursor: hand;"
+        );
+        logoutButton.setOnAction(e -> handleLogout());
+        
+        userSection.getChildren().addAll(userInfoLabel, logoutButton);
+        
+        // Add all components
+        getChildren().addAll(
+            logo,
+            maintenanceItem,
+            spacer,
+            userSection
+        );
+        
+        // Set default active item
+        setActiveMenuItem(maintenanceItem);
+        
+        // Update session state
+        updateSessionState();
     }
     
     /**
@@ -344,7 +383,6 @@ public class SideBar extends VBox implements SessionManager.SessionListener {
             // Add click event
             setOnMouseClicked(e -> {
                 if (navigationListener != null) {
-                    // FIXED METHOD NAME - Line 328
                     navigationListener.onSidebarNavigate(destination);
                 }
             });
@@ -400,67 +438,5 @@ public class SideBar extends VBox implements SessionManager.SessionListener {
      */
     public interface NavigationListener {
         void onSidebarNavigate(String destination);
-    }
-
-    // Add this method after createMenuItems()
-    public void createCleanerMenuItems() {
-        // Clear existing items
-        getChildren().clear();
-        
-        // Re-add logo
-        Label logo = new Label("ME-SEUM");
-        logo.setFont(Font.font("System", FontWeight.BOLD, 18));
-        logo.setTextFill(Color.WHITE);
-        logo.setPadding(new Insets(0, 0, 20, 0));
-        
-        // Create maintenance menu item only
-        SidebarMenuItem maintenanceItem = new SidebarMenuItem("🔧", "MAINTENANCE", "MAINTENANCE");
-        
-        // Add spacer to push logout to bottom
-        Region spacer = new Region();
-        VBox.setVgrow(spacer, Priority.ALWAYS);
-        
-        // Create user info and logout section
-        VBox userSection = new VBox(8);
-        userSection.setPadding(new Insets(15));
-        
-        // User info label
-        userInfoLabel = new Label();
-        userInfoLabel.setFont(Font.font("System", 11));
-        userInfoLabel.setTextFill(Color.LIGHTGRAY);
-        userInfoLabel.setWrapText(true);
-        
-        // Logout button
-        logoutButton = new Button("🚪 Logout");
-        logoutButton.setPrefWidth(150);
-        logoutButton.setStyle(
-            "-fx-background-color: #2c2c2c;" +
-            "-fx-text-fill: #ff6b6b;" +
-            "-fx-font-size: 11px;" +
-            "-fx-font-weight: normal;" +
-            "-fx-padding: 8 12;" +
-            "-fx-background-radius: 5;" +
-            "-fx-border-radius: 5;" +
-            "-fx-border-color: #404040;" +
-            "-fx-border-width: 1;" +
-            "-fx-cursor: hand;"
-        );
-        logoutButton.setOnAction(e -> handleLogout());
-        
-        userSection.getChildren().addAll(userInfoLabel, logoutButton);
-        
-        // Add all components (removed userItem)
-        getChildren().addAll(
-            logo,
-            maintenanceItem,
-            spacer,
-            userSection
-        );
-        
-        // Set default active item
-        setActiveMenuItem(maintenanceItem);
-        
-        // Update session state
-        updateSessionState();
     }
 }

@@ -22,6 +22,11 @@ import main.repository.impl.ArtefakRepositoryImpl;
 import main.repository.impl.PameranRepositoryImpl;
 import main.service.impl.ArtefakServiceImpl;
 import main.service.impl.PameranServiceImpl;
+import main.controller.PemeliharaanController;
+import main.repository.impl.PemeliharaanRepositoryImpl;
+import main.service.impl.PemeliharaanServiceImpl;
+import main.ui.views.cleaner.MaintenanceTaskPage;
+import main.ui.views.curator.MaintenanceListPage;
 import main.ui.components.common.Footer;
 import main.ui.components.common.NavigationBar;
 import main.ui.components.common.SideBar;
@@ -583,22 +588,9 @@ public class Main extends Application implements NavigationBar.NavigationListene
     // Create event details section
     private VBox createEventDetailsSection(PameranDto event) {
         VBox detailsSection = new VBox(20);
+        detailsSection.setPadding(new Insets(0, 0, 30, 0));
 
-        // Section title
-        Label sectionTitle = new Label("Event Description");
-        sectionTitle.setFont(Font.font("Arial", FontWeight.BOLD, 24));
-        sectionTitle.setTextFill(Color.BLACK);
-
-        // Description card
-        VBox descriptionCard = new VBox(15);
-        descriptionCard.setPadding(new Insets(25));
-        descriptionCard.setStyle(
-                "-fx-background-color: white;" +
-                        "-fx-border-radius: 12;" +
-                        "-fx-background-radius: 12;" +
-                        "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 8, 0, 0, 2);");
-
-        // Description text
+        // Description
         Label descriptionLabel = new Label(
                 event.getDeskripsiPameran() != null ? event.getDeskripsiPameran()
                         : "Experience a fascinating journey through Indonesia's rich cultural heritage.");
@@ -612,12 +604,12 @@ public class Main extends Application implements NavigationBar.NavigationListene
         infoGrid.setHgap(30);
         infoGrid.setVgap(15);
 
-        // Location
+        // Location - use fixed location instead of event.getLokasi()
         VBox locationBox = new VBox(5);
         Label locationTitle = new Label("📍 Location");
         locationTitle.setFont(Font.font("Arial", FontWeight.BOLD, 14));
         locationTitle.setTextFill(Color.web("#666666"));
-        Label locationValue = new Label(event.getLokasi() != null ? event.getLokasi() : "Museum Nusantara");
+        Label locationValue = new Label("Museum Nusantara");
         locationValue.setFont(Font.font("Arial", 14));
         locationValue.setTextFill(Color.BLACK);
         locationBox.getChildren().addAll(locationTitle, locationValue);
@@ -627,33 +619,45 @@ public class Main extends Application implements NavigationBar.NavigationListene
         Label timeTitle = new Label("🕒 Time");
         timeTitle.setFont(Font.font("Arial", FontWeight.BOLD, 14));
         timeTitle.setTextFill(Color.web("#666666"));
-        String timeInfo = "9:00 AM - 6:00 PM";
-        if (event.getTanggalMulai() != null) {
+        
+        String timeInfo = "TBD";
+        if (event.getTanggalMulai() != null && event.getTanggalSelesai() != null) {
             DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("h:mm a");
-            timeInfo = event.getTanggalMulai().format(timeFormatter) + " - 6:00 PM";
+            String startTime = event.getTanggalMulai().format(timeFormatter);
+            String endTime = event.getTanggalSelesai().format(timeFormatter);
+            timeInfo = startTime + " - " + endTime;
         }
+        
         Label timeValue = new Label(timeInfo);
         timeValue.setFont(Font.font("Arial", 14));
         timeValue.setTextFill(Color.BLACK);
         timeBox.getChildren().addAll(timeTitle, timeValue);
 
-        // Status
-        VBox statusBox = new VBox(5);
-        Label statusTitle = new Label("✨ Status");
-        statusTitle.setFont(Font.font("Arial", FontWeight.BOLD, 14));
-        statusTitle.setTextFill(Color.web("#666666"));
-        Label statusValue = new Label("Active");
-        statusValue.setFont(Font.font("Arial", 14));
-        statusValue.setTextFill(Color.web("#28a745"));
-        statusBox.getChildren().addAll(statusTitle, statusValue);
+        // Date
+        VBox dateBox = new VBox(5);
+        Label dateTitle = new Label("📅 Date");
+        dateTitle.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        dateTitle.setTextFill(Color.web("#666666"));
+        
+        String dateInfo = "TBD";
+        if (event.getTanggalMulai() != null && event.getTanggalSelesai() != null) {
+            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MMM dd, yyyy");
+            String startDate = event.getTanggalMulai().format(dateFormatter);
+            String endDate = event.getTanggalSelesai().format(dateFormatter);
+            dateInfo = startDate + " - " + endDate;
+        }
+        
+        Label dateValue = new Label(dateInfo);
+        dateValue.setFont(Font.font("Arial", 14));
+        dateValue.setTextFill(Color.BLACK);
+        dateBox.getChildren().addAll(dateTitle, dateValue);
 
+        // Add to grid
         infoGrid.add(locationBox, 0, 0);
         infoGrid.add(timeBox, 1, 0);
-        infoGrid.add(statusBox, 2, 0);
+        infoGrid.add(dateBox, 2, 0);
 
-        descriptionCard.getChildren().addAll(descriptionLabel, new Separator(), infoGrid);
-        detailsSection.getChildren().addAll(sectionTitle, descriptionCard);
-
+        detailsSection.getChildren().addAll(descriptionLabel, infoGrid);
         return detailsSection;
     }
 
@@ -974,7 +978,7 @@ public class Main extends Application implements NavigationBar.NavigationListene
                     String.valueOf(event.getPameranId()),
                     dateRange,
                     timeRange,
-                    event.getLokasi() != null ? event.getLokasi() : "Museum Nusantara",
+                    "Museum Nusantara",
                     "Confirmed");
 
             // Add to orders list
@@ -1004,22 +1008,29 @@ public class Main extends Application implements NavigationBar.NavigationListene
         System.out.println("Sidebar navigation to: " + destination);
         switch (destination) {
             case "DASHBOARD":
-                showDashboard();
+                showArtefakListPage(); // CHANGED: use artifact page as dashboard
                 break;
-            case "ARTEFAK_LIST":
+            case "ARTIFACT": // FIXED: changed from "ARTEFAK_LIST" to "ARTIFACT"
                 showArtefakListPage();
                 break;
             case "EVENT_ARTIFACT":
                 showEventArtifactPage();
                 break;
-            case "FEEDBACK_LIST":
+            case "MAINTENANCE": // FIXED: changed from "FEEDBACK_LIST" to "MAINTENANCE"
+                showMaintenancePage();
+                break;
+            case "FEEDBACK": // FIXED: added FEEDBACK case
                 showFeedbackListPage();
+                break;
+            case "LOGIN": // FIXED: added LOGIN case for logout redirect
+                showLoginPage();
                 break;
             case "LOGOUT":
                 handleLogout();
                 break;
             default:
                 System.out.println("Unknown sidebar destination: " + destination);
+                showArtefakListPage(); // CHANGED: default to artifact page instead of dashboard
                 break;
         }
     }
@@ -1080,39 +1091,10 @@ public class Main extends Application implements NavigationBar.NavigationListene
         return page;
     }
 
-    // Add missing dashboard and page methods
-    private void showDashboard() {
-        try {
-            hideNavigationBar();
-
-            VBox dashboardContent = new VBox(20);
-            dashboardContent.setPadding(new Insets(30));
-            dashboardContent.setStyle("-fx-background-color: white;");
-
-            Label titleLabel = new Label("Dashboard");
-            titleLabel.setFont(Font.font("System", FontWeight.BOLD, 24));
-            titleLabel.setTextFill(Color.web("#2c3e50"));
-
-            Label welcomeLabel = new Label("Welcome to ME-SEUM Management System");
-            welcomeLabel.setFont(Font.font("System", 16));
-            welcomeLabel.setTextFill(Color.web("#34495e"));
-
-            dashboardContent.getChildren().addAll(titleLabel, welcomeLabel);
-
-            mainLayout.setLeft(sideBar);
-            mainLayout.setCenter(dashboardContent);
-
-            System.out.println("✅ Dashboard loaded!");
-
-        } catch (Exception e) {
-            System.err.println("Error loading Dashboard: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
     private void showArtefakListPage() {
         try {
             hideNavigationBar();
+            sideBar.setActiveMenuByDestination("ARTIFACT"); // Set active menu
 
             ArtefakRepositoryImpl repository = new ArtefakRepositoryImpl();
             ArtefakServiceImpl service = new ArtefakServiceImpl(repository);
@@ -1151,6 +1133,41 @@ public class Main extends Application implements NavigationBar.NavigationListene
 
         } catch (Exception e) {
             System.err.println("Error loading Event Artifact Management: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void showMaintenancePage() {
+        try {
+            hideNavigationBar();
+            sideBar.setActiveMenuByDestination("MAINTENANCE");
+
+            // Create maintenance controllers
+            ArtefakRepositoryImpl artefakRepository = new ArtefakRepositoryImpl();
+            ArtefakServiceImpl artefakService = new ArtefakServiceImpl(artefakRepository);
+            ManajemenArtefakController artefakController = new ManajemenArtefakController(artefakService);
+
+            PemeliharaanRepositoryImpl pemeliharaanRepository = new PemeliharaanRepositoryImpl();
+            PemeliharaanServiceImpl pemeliharaanService = new PemeliharaanServiceImpl(pemeliharaanRepository);
+            PemeliharaanController pemeliharaanController = new PemeliharaanController(pemeliharaanService);
+
+            // Check user role to show appropriate maintenance view
+            if (currentUser != null && currentUser.getRole() == UserRole.CLEANER) {
+                // Show cleaner maintenance task page
+                MaintenanceTaskPage maintenanceTaskPage = new MaintenanceTaskPage(pemeliharaanController);
+                mainLayout.setLeft(sideBar);
+                mainLayout.setCenter(maintenanceTaskPage);
+                System.out.println("✅ Maintenance Task Page loaded for cleaner!");
+            } else {
+                // Show curator maintenance list page
+                MaintenanceListPage maintenanceListPage = new MaintenanceListPage(artefakController, pemeliharaanController);
+                mainLayout.setLeft(sideBar);
+                mainLayout.setCenter(maintenanceListPage);
+                System.out.println("✅ Maintenance List Page loaded for curator!");
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error loading Maintenance Page: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -1197,15 +1214,18 @@ public class Main extends Application implements NavigationBar.NavigationListene
 
         System.out.println("✅ Login successful! Role: " + role + ", User: " + user.getNamaLengkap());
 
+        // Set user in sidebar
+        sideBar.setCurrentUser(user);
+
         // Navigate based on role
         switch (role.toUpperCase()) {
             case "CURATOR":
-                // Show curator dashboard with sidebar
-                showDashboard();
+                // Show curator artifact page as dashboard
+                showArtefakListPage(); // CHANGED: artifact page as landing page
                 break;
             case "CLEANER":
-                // Show cleaner dashboard (you can implement this later)
-                showDashboard();
+                // Show cleaner artifact page (you can implement this later)
+                showMaintenancePage(); // CHANGED: artifact page as landing page
                 break;
             case "CUSTOMER":
             default:
