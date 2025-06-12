@@ -1,4 +1,4 @@
-# IF2050_TB_K3G_ME-SEUM
+# IF2050-2025-K3G-ME-SEUM
 ME-SEUM - Museum Nusantara Management System
 
 Pastikan memiliki software berikut terinstall:
